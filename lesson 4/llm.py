@@ -1,9 +1,15 @@
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-client = OpenAI(
-    api_key="lm-studio",
-    base_url="http://localhost:1234/v1"
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(
+#     api_key="lm-studio",
+#     base_url="http://localhost:1234/v1"
+# )
+
 
 SYSTEM_PROMPT = """
 You are an AI planning engine.
@@ -18,10 +24,39 @@ RULES:
 
 def get_plan(task: str) -> str:
     response = client.chat.completions.create(
-        model="",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Objective: {task}\nReturn JSON only."}
+            {"role": "user", "content": f"""
+                Create a TASK EXECUTION PLAN.
+
+                The JSON MUST follow this EXACT structure:
+
+                {{
+                  "objective": "string",
+                  "steps": [
+                    {{
+                      "id": 1,
+                      "action": "string",
+                      "input": "string",
+                      "expected_output": "string"
+                    }}
+                  ],
+                  "confidence": 0.0
+                }}
+
+                Rules:
+                - steps MUST be a list of OBJECTS, not strings
+                - Every step MUST include all four fields
+                - id MUST be an integer starting at 1
+                - Do NOT add extra fields
+                - Do NOT explain anything
+
+                Objective:
+                {task}
+
+                Return ONLY valid JSON.
+                """}
         ],
         temperature=0,
     )
@@ -30,7 +65,7 @@ def get_plan(task: str) -> str:
 
 def repair_plan(bad_output: str, error: str) -> str:
     response = client.chat.completions.create(
-        model="",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"""
