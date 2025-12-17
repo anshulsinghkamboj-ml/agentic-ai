@@ -1,11 +1,9 @@
-import os
 from openai import OpenAI
-from dotenv import load_dotenv
 
-load_dotenv()
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+client = OpenAI(
+    api_key="lm-studio",
+    base_url="http://localhost:1234/v1"
+)
 
 SYSTEM_PROMPT = """
 You are an AI planning engine.
@@ -17,43 +15,31 @@ RULES:
 - If unsure, make best assumptions but NEVER break schema
 """
 
+
 def get_plan(task: str) -> str:
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"""
-Create a task execution plan for the following objective.
-
-Objective:
-{task}
-
-Output JSON ONLY.
-"""
-            }
+            {"role": "user", "content": f"Objective: {task}\nReturn JSON only."}
         ],
         temperature=0,
     )
-
     return response.choices[0].message.content
 
 
 def repair_plan(bad_output: str, error: str) -> str:
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"""
+            {"role": "user", "content": f"""
 Your previous output was INVALID.
 
 Validation error:
 {error}
 
-You MUST fix the JSON so that it EXACTLY matches this schema:
+Fix the JSON so it EXACTLY matches this schema:
 
 {{
   "objective": "string",
@@ -68,17 +54,11 @@ You MUST fix the JSON so that it EXACTLY matches this schema:
   "confidence": 0.0
 }}
 
-Rules:
-- Return ONLY valid JSON
-- Do NOT add or remove fields
-- Do NOT explain anything
-
-Previous invalid JSON:
+Return ONLY valid JSON.
+Previous output:
 {bad_output}
-"""
-            }
+"""}
         ],
         temperature=0,
     )
-
     return response.choices[0].message.content
