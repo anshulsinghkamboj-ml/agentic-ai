@@ -1,4 +1,4 @@
-mermaid
+```mermaid
 flowchart TD
 
     %% Entry Point
@@ -60,3 +60,4 @@ flowchart TD
     %% Logging Fatal
     N --> Q[log fatal_failure]
     Q --> END_FAIL[Exit Failure]
+```
